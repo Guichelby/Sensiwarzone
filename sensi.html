@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Calculadora de Sensibilidade Warzone</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #121212;
+      color: #ffffff;
+      padding: 20px;
+      max-width: 700px;
+      margin: auto;
+    }
+    h1 {
+      text-align: center;
+      color: #00ffd0;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 5px;
+      border: none;
+      font-size: 16px;
+      background-color: #1e1e1e;
+      color: #fff;
+    }
+    button {
+      margin-top: 20px;
+      padding: 12px;
+      background-color: #00ffd0;
+      color: #000;
+      font-weight: bold;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      width: 100%;
+    }
+    .result {
+      margin-top: 25px;
+      padding: 15px;
+      background-color: #2a2a2a;
+      border-radius: 10px;
+      font-size: 18px;
+    }
+    .result strong {
+      color: #00ffd0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Calculadora de Sensibilidade Warzone</h1>
+
+  <label>Sensibilidade Horizontal atual:</label>
+  <input type="number" step="0.01" id="sensiHoriz" placeholder="Ex: 6.00">
+
+  <label>Sensibilidade Vertical atual:</label>
+  <input type="number" step="0.01" id="sensiVert" placeholder="Ex: 6.00">
+
+  <label>Multiplicador ADS atual:</label>
+  <input type="number" step="0.01" id="adsMult" placeholder="Ex: 1.00">
+
+  <label>Velocidade de movimento atual:</label>
+  <input type="number" step="0.01" id="velAtual" placeholder="Ex: 5.4">
+
+  <label>Velocidade desejada:</label>
+  <input type="number" step="0.01" id="velDesejada" placeholder="Ex: 6.9">
+
+  <button onclick="calcular()">Calcular Novos Valores</button>
+
+  <div class="result" id="resultado"></div>
+
+  <script>
+    const campos = ["sensiHoriz", "sensiVert", "adsMult", "velAtual", "velDesejada"];
+
+    const equivalencia = [
+      0.49, 0.68, 0.86, 1.05, 1.23, 1.42, 1.60, 1.78, 1.97, 2.15,
+      2.34, 2.52, 2.71, 2.89, 3.08, 3.26, 3.45, 3.63, 3.82, 4.00
+    ];
+
+    // Carrega os dados salvos
+    window.onload = () => {
+      campos.forEach(id => {
+        const valor = localStorage.getItem(id);
+        if (valor) document.getElementById(id).value = valor;
+      });
+    };
+
+    // Salva valores ao digitar
+    campos.forEach(id => {
+      const input = document.getElementById(id);
+      input?.addEventListener("input", () => {
+        localStorage.setItem(id, input.value);
+      });
+    });
+
+    // Encontra sensibilidade aproximada com base na média
+    function encontrarSensiAproximada(media) {
+      let maisProxima = 1;
+      let menorDiferenca = Infinity;
+      for (let i = 0; i < equivalencia.length; i++) {
+        const diferenca = Math.abs(media - equivalencia[i]);
+        if (diferenca < menorDiferenca) {
+          menorDiferenca = diferenca;
+          maisProxima = i + 1;
+        }
+      }
+      return maisProxima;
+    }
+
+    // Cálculo principal
+    function calcular() {
+      const h = parseFloat(document.getElementById("sensiHoriz").value);
+      const v = parseFloat(document.getElementById("sensiVert").value);
+      const ads = parseFloat(document.getElementById("adsMult").value);
+      const velAtual = parseFloat(document.getElementById("velAtual").value);
+      const velDesejada = parseFloat(document.getElementById("velDesejada").value);
+
+      if ([h, v, ads, velAtual, velDesejada].some(val => isNaN(val) || val <= 0)) {
+        document.getElementById("resultado").innerHTML = "Preencha todos os campos corretamente.";
+        return;
+      }
+
+      const novoHoriz = (h * velDesejada) / velAtual;
+      const novoVert = (v * velDesejada) / velAtual;
+      const novaADS = (ads * velDesejada) / velAtual;
+
+      const media = (novoHoriz + novoVert) / 2;
+      const sensiAproximada = encontrarSensiAproximada(media);
+
+      document.getElementById("resultado").innerHTML = `
+        <strong>Resultados calculados:</strong><br><br>
+        Nova Sensibilidade Horizontal: <strong>${novoHoriz.toFixed(2)}</strong><br>
+        Nova Sensibilidade Vertical: <strong>${novoVert.toFixed(2)}</strong><br>
+        Novo Multiplicador ADS: <strong>${novaADS.toFixed(2)}</strong><br><br>
+        <span style="color:#ccc">Você está usando aproximadamente a sensibilidade <strong>${sensiAproximada}</strong> (Horizontal e Vertical)</span>
+      `;
+    }
+  </script>
+</body>
+</html>
